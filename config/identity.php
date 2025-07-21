@@ -40,6 +40,7 @@ return [
     'orgname'     => env( 'IDENTITY_ORGNAME', '*** CONFIG IDENTITY IN .env ***' ),
     'name'        => env( 'IDENTITY_NAME', '*** CONFIG IDENTITY IN .env ***' ),
     'email'       => env( 'IDENTITY_EMAIL', '*** CONFIG IDENTITY IN .env ***' ),
+    'bccemail'       => env( 'IDENTITY_BCCEMAIL', '*** CONFIG IDENTITY IN .env ***' ),
     'testemail'   => env( 'IDENTITY_TESTEMAIL', '*** CONFIG IDENTITY IN .env ***' ),
     'rsvpemail'   => env( 'IDENTITY_RSVPEMAIL', '*** CONFIG IDENTITY IN .env ***' ),
     

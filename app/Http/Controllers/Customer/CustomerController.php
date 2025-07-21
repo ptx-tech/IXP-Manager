@@ -511,7 +511,7 @@ class CustomerController extends Controller
         Former::populate( [
             'to'                        => $cust->nocemail,
             'cc'                        => implode( ',', $emails ),
-            'bcc'                       => config('identity.email'),
+            'bcc'                       => config('identity.bccemail'),
             'subject'                   => config('identity.name'). ' :: Welcome Mail',
         ] );
 
