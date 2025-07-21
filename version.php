@@ -25,6 +25,6 @@
 # Basic version information
 #
 
-define( 'APPLICATION_VERSION', '6.4.2' );
+define( 'APPLICATION_VERSION', '6.4.2-oafabric.2' );
 define( 'APPLICATION_VERDATE', '2024112000' );
 
