@@ -70,10 +70,12 @@ class ApiKeyControllerTest extends DuskTestCase
                 ->assertSee( 'iqLw1OF50aPU' );
 
             // 1. test add some inputs
+            // set the date input's value directly: it is always Y-m-d, whereas what typing into the
+            // input means depends on the browser's locale
             $browser->visit( '/api-key/create' )
                 ->assertSee( 'Create API Key' )
                 ->type( "description", "API Key" )
-                ->type( "expires", now()->addMonth()->format("d-m-Y") )
+                ->value( 'input[name="expires"]', now()->addMonth()->format( "Y-m-d" ) )
                 ->press( 'Create' )
                 ->waitForLocation( '/api-key/list' )
                 ->assertSee( "API Key created" )
@@ -103,16 +105,7 @@ class ApiKeyControllerTest extends DuskTestCase
 
             // 4. Check Value
 
-            // work around locale issues:
-            $expectedExpires = now()->addMonth()->format( "Y-m-d" );
-
-            if( $expectedExpires === Carbon::parse( $apiKey->expires )->format( "Y-m-d" ) ) {
-                $db = Carbon::parse( $apiKey->expires )->format( "Y-m-d" );
-            } else {
-                $db = Carbon::parse( $apiKey->expires )->format( "Y-d-m" );
-            }
-
-            $this->assertEquals( $expectedExpires, $db );
+            $this->assertEquals( now()->addMonth()->format( "Y-m-d" ), Carbon::parse( $apiKey->expires )->format( "Y-m-d" ) );
             $this->assertEquals( 'Temporally Test API Key', $apiKey->description );
 
             // 5. Delete API KEY

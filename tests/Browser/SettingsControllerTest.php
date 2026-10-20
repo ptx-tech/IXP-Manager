@@ -85,8 +85,8 @@ class SettingsControllerTest extends DuskTestCase
             
             $browser->driver->executeScript( 'window.scrollTo(0, 3000);' );
             
-            $browser->press( 'Save Changes' )
-                ->waitForLocation( route( 'settings@index' ) );
+            $this->saveChanges( $browser, 'Settings have been successfully updated' )
+                ->assertRouteIs( 'settings@index' );
             
             // ensure a save with no changes yields no changes in the .env file
             $this->assertEquals( $this->test_env, file_get_contents( __DIR__ . '/../../.env' ));
@@ -97,8 +97,7 @@ class SettingsControllerTest extends DuskTestCase
                 ->type( 'rs_rpki_rtr1_port', 'this_is_not_an_integer' )
                 ->driver->executeScript( 'window.scrollTo(0, 3000);' );
             
-            $browser->press( 'Save Changes' )
-                ->waitForText( 'There were validation errors with your settings' )
+            $this->saveChanges( $browser, 'There were validation errors with your settings' )
                 ->assertSee( 'The rs rpki rtr1 port must be an integer' );
             
             // ensure still no changes
@@ -110,8 +109,7 @@ class SettingsControllerTest extends DuskTestCase
                 ->type( 'rs_rpki_rtr1_port', "12345" )
                 ->driver->executeScript( 'window.scrollTo(0, 3000);' );
             
-            $browser->press( 'Save Changes' )
-                ->waitForText( 'Settings have been successfully updated' );
+            $this->saveChanges( $browser, 'Settings have been successfully updated' );
             
             $nenv = file_get_contents( __DIR__ . '/../../.env' );
             
@@ -132,8 +130,7 @@ class SettingsControllerTest extends DuskTestCase
                 ->waitForText( 'Minimum IPv4 Subnet Size' )
                 ->clear( 'rs_rpki_rtr1_port' )
                 ->driver->executeScript( 'window.scrollTo(0, 3000);' );
-            $browser->press( 'Save Changes' )
-                ->waitForText( 'Settings have been successfully updated' );
+            $this->saveChanges( $browser, 'Settings have been successfully updated' );
 
             $nenv = file_get_contents( __DIR__ . '/../../.env' );
             $this->assertStringNotContainsString( 'IXP_RPKI_RTR1_PORT', $nenv );
@@ -152,16 +149,14 @@ class SettingsControllerTest extends DuskTestCase
                 ->waitForText('Application-Specific Passwords')
                 ->uncheck('app-passwords')
                 ->driver->executeScript( 'window.scrollTo(0, 3000);' );
-            $browser->press( 'Save Changes' )
-                ->waitForText( 'Settings have been successfully updated' );
+            $this->saveChanges( $browser, 'Settings have been successfully updated' );
 
             $nenv = file_get_contents( __DIR__ . '/../../.env' );
             $this->assertStringContainsString( 'IXP_FE_FRONTEND_DISABLED_APP_PASSWORD=true', $nenv );
 
             $browser->check('app-passwords')
                 ->driver->executeScript( 'window.scrollTo(0, 3000);' );
-            $browser->press( 'Save Changes' )
-                ->waitForText( 'Settings have been successfully updated' );
+            $this->saveChanges( $browser, 'Settings have been successfully updated' );
 
             $nenv = file_get_contents( __DIR__ . '/../../.env' );
             $this->assertStringContainsString( 'IXP_FE_FRONTEND_DISABLED_APP_PASSWORD=false', $nenv );
@@ -182,5 +177,35 @@ class SettingsControllerTest extends DuskTestCase
             $browser->visit( route( 'settings@index' ) )
                 ->assertDontSee( 'Server has no write permissions for .env file. Changes disabled.' );
         } );
+    }
+
+    /**
+     * Press Save Changes and check that the page shows $expect.
+     *
+     * A successful save rewrites .env, which makes `artisan serve` restart the PHP server. The
+     * redirect back to the settings page, or its assets, can land in that gap and fail, leaving a
+     * Chrome error page or a page without its JavaScript. So wait for the restart, and reload
+     * until the page is whole. The message is checked on every attempt, since a reload drops it.
+     */
+    private function saveChanges( Browser $browser, string $expect ): Browser
+    {
+        $browser->press( 'Save Changes' );
+
+        $seen = false;
+        for( $i = 0; $i < 5; $i++ ) {
+            $this->awaitArtisanEnvReload();
+
+            $seen = $seen || str_contains( $browser->driver->getPageSource(), $expect );
+
+            if( $browser->driver->executeScript( 'return document.readyState === "complete" && !!window.jQuery && !!document.getElementById( "envForm" );' ) ) {
+                break;
+            }
+
+            $browser->refresh();
+        }
+
+        $this->assertTrue( $seen, "Expected '{$expect}' after saving the settings" );
+
+        return $browser;
     }
 }
