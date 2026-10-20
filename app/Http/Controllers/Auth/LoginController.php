@@ -117,7 +117,10 @@ class LoginController extends Controller
      */
     public function showLoginForm() : View
     {
-        if( !session()->has('url.intended') && Str::startsWith(url()->previous(), url(''))) {
+        // url()->previous() prefers the Referer header. Never send the user back to the logout
+        // page, or they are logged straight out again after a successful login.
+        if( !session()->has('url.intended') && Str::startsWith(url()->previous(), url(''))
+                && !Str::startsWith( url()->previous(), route( 'login@logout' ) ) ) {
             if( config('google2fa.enabled') ) {
                 if( strpos( url()->previous(), route( "2fa@authenticate" ) ) !== false ) {
                     // Store intended url to redirect after login
